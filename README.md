@@ -19,24 +19,52 @@ As AI agents become more capable, they need guardrails. ATL provides:
 
 ## Architecture
 
+```mermaid
+flowchart TB
+    subgraph App["Your Application"]
+        Request[Agent Request]
+    end
+
+    subgraph ATL["Agent Trust Layer"]
+        TG[Trust Gates<br/>L0-L3 Risk Levels]
+        OR[Orchestrator<br/>Workflow Stages]
+        TR[Tool Router<br/>Dispatch & Validate]
+        EL[Event Logger<br/>Audit Trail]
+        AP[Approvals<br/>Human-in-Loop]
+        SB[Sandbox<br/>Safe Execution]
+    end
+
+    subgraph DA["Domain Adapters"]
+        Tools[Your Tools]
+        Agents[Your Agents]
+        Workflows[Your Workflows]
+    end
+
+    subgraph Storage["Persistence"]
+        DB[(PostgreSQL)]
+    end
+
+    Request --> TG
+    TG -->|"Pass"| OR
+    TG -->|"Fail"| Reject[Rejected]
+    OR --> TR
+    TR --> Tools
+    TR --> SB
+    SB --> Tools
+    OR --> AP
+    AP -->|"Approved"| TR
+    EL --> DB
+    AP --> DB
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      Your Application                        │
-├─────────────────────────────────────────────────────────────┤
-│                    Agent Trust Layer                         │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
-│  │ Trust Gates  │  │  Orchestrator │  │ Tool Router  │       │
-│  │ (L0-L3)      │  │  (Workflows)  │  │ (Dispatch)   │       │
-│  └──────────────┘  └──────────────┘  └──────────────┘       │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
-│  │ Event Logger │  │  Approvals   │  │   Sandbox    │       │
-│  │ (Audit)      │  │  (HITL)      │  │  (Safe Exec) │       │
-│  └──────────────┘  └──────────────┘  └──────────────┘       │
-├─────────────────────────────────────────────────────────────┤
-│                    Domain Adapters                           │
-│         (Your business tools, agents, workflows)             │
-└─────────────────────────────────────────────────────────────┘
-```
+
+### How It Works
+
+1. **Request** → Agent wants to perform an action
+2. **Trust Gate** → Validates risk level (L0=safe, L3=critical)
+3. **Orchestrator** → Routes through workflow stages (plan→execute→review→commit)
+4. **Tool Router** → Dispatches to appropriate tool handler
+5. **Approvals** → High-risk actions require human approval
+6. **Event Logger** → Every action is audited for compliance
 
 ## Installation
 
